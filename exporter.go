@@ -56,24 +56,33 @@ func levelStrings(l []logrus.Level) []string {
 	return ls
 }
 
+var versionMap = logrus.Fields{
+	"version":   version.Version,
+	"revision":  version.Revision,
+	"branch":    version.Branch,
+	"buildUser": version.BuildUser,
+	"buildDate": version.BuildDate,
+	"goVersion": version.GoVersion,
+}
+
 func main() {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(version.Print("influxdb_stats_exporter"))
 	kingpin.Parse()
-
-	fmt.Println(version.Print("influxdb_stats_exporter"))
 
 	// Validity is checked in kingpin
 	level, _ := logrus.ParseLevel(*logLevel)
 	logrus.SetLevel(level)
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
+	logrus.WithFields(versionMap).Info("Starting influxdb_stats_exporter")
+
 	config := buildConfig()
 	c := newCollector(config)
 	defer func() {
 		err := c.client.Close()
 		if err != nil {
-			logrus.WithField("error", err).Error("Error closing influx client")
+			logrus.WithError(err).Error("Error closing influx client")
 		}
 	}()
 
@@ -81,7 +90,11 @@ func main() {
 	prometheus.MustRegister(version.NewCollector("influxdb_stats_exporter"))
 
 	http.Handle(*metricsPath, withLogging(promhttp.Handler()))
-	http.ListenAndServe(*bindAddr, nil)
+	logrus.Infof("Serving Influx metrics on %v%v", *bindAddr, *metricsPath)
+	err := http.ListenAndServe(*bindAddr, nil)
+	if err != nil {
+		logrus.WithError(err).Fatalf("Error serving metrics endpoint")
+	}
 }
 
 func withLogging(h http.Handler) http.Handler {
@@ -111,7 +124,7 @@ func newCollector(config influx.HTTPConfig) collector {
 	logrus.Infof("Using InfluxDB at %v", *influxUrl)
 	client, err := influx.NewHTTPClient(config)
 	if err != nil {
-		logrus.WithField("error", err).Panic("Failed to set up influx client")
+		logrus.WithError(err).Panic("Failed to set up influx client")
 	}
 
 	return collector{
@@ -128,11 +141,11 @@ func (c collector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(queryDuration, prometheus.GaugeValue, time.Since(t).Seconds())
 
 	if err != nil {
-		logrus.WithField("error", err).Error("SHOW STATS query failed")
+		logrus.WithError(err).Error("SHOW STATS query failed")
 		ch <- prometheus.MustNewConstMetric(querySuccess, prometheus.GaugeValue, 0)
 		return
 	} else if r.Error() != nil {
-		logrus.WithField("error", r.Error()).Error("SHOW STATS query failed")
+		logrus.WithError(r.Error()).Error("SHOW STATS query failed")
 		ch <- prometheus.MustNewConstMetric(querySuccess, prometheus.GaugeValue, 0)
 		return
 	}
