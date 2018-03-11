@@ -1,6 +1,7 @@
 # Influxdb stats Exporter
 
 [![CircleCI](https://circleci.com/gh/carlpett/influxdb_stats_exporter.svg?style=shield)](https://circleci.com/gh/carlpett/influxdb_stats_exporter)
+[![DockerHub](https://img.shields.io/docker/build/carlpett/influxdb_stats_exporter.svg?style=shield)](https://hub.docker.com/r/carlpett/influxdb_stats_exporter/)
 
 Prometheus exporter for InfluxDB stats, as reported by a `SHOW STATS` query. Tested to work with InfluxDB 1.4 and 1.5.
 
