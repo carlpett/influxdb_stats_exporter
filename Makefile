@@ -27,6 +27,10 @@ tarball: build $(PROMU)
 	@echo ">> building release tarball"
 	@$(PROMU) tarball --prefix ./tarballs
 
+docker:
+	@echo ">> building docker image"
+	@docker build -t carlpett/influxdb_stats_exporter .
+
 promu: $(PROMU)
 $(PROMU):
 	@GOOS=$(shell uname -s | tr A-Z a-z) \
