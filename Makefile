@@ -1,9 +1,6 @@
 PROMU   := $(GOPATH)/bin/promu
 pkgs     = $(shell go list ./...)
 
-PREFIX  ?= $(shell pwd)/.build
-BIN_DIR ?= $(shell pwd)
-
 all: format build
 
 style:
@@ -24,12 +21,13 @@ test:
 
 build: $(PROMU)
 	@echo ">> building binaries"
-	@$(PROMU) build --prefix $(PREFIX)
+	@$(PROMU) build
 
-tarball: $(PROMU)
+tarball: build $(PROMU)
 	@echo ">> building release tarball"
-	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
+	@$(PROMU) tarball --prefix ./tarballs
 
+promu: $(PROMU)
 $(PROMU):
 	@GOOS=$(shell uname -s | tr A-Z a-z) \
 	GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
