@@ -1,7 +1,7 @@
 PROMU   := $(GOPATH)/bin/promu
 pkgs     = $(shell go list ./...)
 
-PREFIX  ?= $(shell pwd)/build
+PREFIX  ?= $(shell pwd)/.build
 BIN_DIR ?= $(shell pwd)
 
 all: format build
