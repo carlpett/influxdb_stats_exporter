@@ -37,10 +37,12 @@ var (
 )
 
 var (
-	influxUrl   = kingpin.Flag("influx.url", "Url to InfluxDB").Default("http://localhost:8086").URL()
-	bindAddr    = kingpin.Flag("web.listen-address", "Address to serve metrics on").Default(":9424").String()
-	metricsPath = kingpin.Flag("web.metrics-path", "Path to serve metrics on").Default("/metrics").String()
-	logLevel    = kingpin.Flag("log.level", "Log level").Default(levelString(logrus.InfoLevel)).Enum(levelStrings(logrus.AllLevels)...)
+	influxUrl      = kingpin.Flag("influx.url", "Url to InfluxDB").Default("http://localhost:8086").Envar("INFLUX_URL").URL()
+	influxUser     = kingpin.Flag("influx.user", "InfluxDB username").Default("").Envar("INFLUX_USER").String()
+	influxPassword = kingpin.Flag("influx.password", "InfluxDB password").Default("").Envar("INFLUX_PASSWORD").String()
+	bindAddr       = kingpin.Flag("web.listen-address", "Address to serve metrics on").Default(":9424").String()
+	metricsPath    = kingpin.Flag("web.metrics-path", "Path to serve metrics on").Default("/metrics").String()
+	logLevel       = kingpin.Flag("log.level", "Log level").Default(levelString(logrus.InfoLevel)).Enum(levelStrings(logrus.AllLevels)...)
 )
 
 func levelString(l logrus.Level) string {
@@ -66,7 +68,8 @@ func main() {
 	logrus.SetLevel(level)
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
-	c := newCollector()
+	config := buildConfig()
+	c := newCollector(config)
 	defer func() {
 		err := c.client.Close()
 		if err != nil {
@@ -91,11 +94,22 @@ func withLogging(h http.Handler) http.Handler {
 	})
 }
 
-func newCollector() collector {
-	logrus.Infof("Connecting to InfluxDB at %v", *influxUrl)
-	client, err := influx.NewHTTPClient(influx.HTTPConfig{
+func buildConfig() influx.HTTPConfig {
+	config := influx.HTTPConfig{
 		Addr: (*influxUrl).String(),
-	})
+	}
+	if *influxUser != "" {
+		config.Username = *influxUser
+	}
+	if *influxPassword != "" {
+		config.Password = *influxPassword
+	}
+
+	return config
+}
+func newCollector(config influx.HTTPConfig) collector {
+	logrus.Infof("Using InfluxDB at %v", *influxUrl)
+	client, err := influx.NewHTTPClient(config)
 	if err != nil {
 		logrus.WithField("error", err).Panic("Failed to set up influx client")
 	}
