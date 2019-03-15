@@ -2,17 +2,19 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.9
-    working_directory: /go/src/github.com/carlpett/influxdb_stats_exporter
+      - image: circleci/golang:1.12
+    working_directory: /build/influxdb_stats_exporter
     steps:
       - checkout
+      - run: go mod tidy
       - run: make build
   release:
     docker:
-      - image: circleci/golang:1.9
-    working_directory: /go/src/github.com/carlpett/influxdb_stats_exporter
+      - image: circleci/golang:1.12
+    working_directory: /build/influxdb_stats_exporter
     steps:
       - checkout
+      - run: go mod tidy
       - run:
           name: Set version
           command: echo -n "Building release for "; git describe --always --tags | sed 's/^v//' | tee VERSION
