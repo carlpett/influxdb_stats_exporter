@@ -4,27 +4,35 @@ jobs:
     docker:
       - image: circleci/golang:1.12
     steps:
+      - restore_cache:
+          keys:
+            - go-cache
       - checkout
-      - run: go mod tidy
+      - run:
+          name: Set version
+          command: echo -n "Building release for "; git describe --always --tags | sed 's/^v//' | tee VERSION
       - run: make build
+      - save_cache:
+          key: go-cache
+          paths:
+            - /go/pkg
+            - /root/.cache/go-build
   release:
     docker:
       - image: circleci/golang:1.12
     steps:
+      - restore_cache:
+          keys:
+            - go-cache
       - checkout
-      - run: go mod tidy
       - run:
           name: Set version
           command: echo -n "Building release for "; git describe --always --tags | sed 's/^v//' | tee VERSION
-      - run: make tarball
-      - run:
-          name: Download github-release tool
-          command: curl -sL 'https://github.com/aktau/github-release/releases/download/v0.6.2/linux-amd64-github-release.tar.bz2' | tar xjf - --strip-components 3 -C /go/bin
-      - run: promu release tarballs
-      - run: promu checksum tarballs
+      - run: make crossbuild
       - store_artifacts:
-          path: tarballs
+          path: binaries
           destination: releases
+      - run: make release
 
 workflows:
   version: 2
