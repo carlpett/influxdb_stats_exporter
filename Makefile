@@ -1,41 +1,48 @@
-PROMU   := $(GOPATH)/bin/promu
-pkgs     = $(shell go list ./...)
+CROSSBUILD_OS = linux windows darwin
+CROSSBUILD_ARCH = 386 amd64
 
-all: format build
+VERSION  = $(shell git describe --always --tags --dirty=-dirty)
+REVISION = $(shell git rev-parse --short=8 HEAD)
+BRANCH   = $(shell git rev-parse --abbrev-ref HEAD)
 
-style:
-	@echo ">> checking code style"
-	@! gofmt -d $(shell find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
+BUILDUSER ?= $(USER)
+BUILDHOST ?= $(HOSTNAME)
+LDFLAGS    = -X github.com/prometheus/common/version.Version=${VERSION} \
+             -X github.com/prometheus/common/version.Revision=${REVISION} \
+             -X github.com/prometheus/common/version.Branch=${BRANCH} \
+             -X github.com/prometheus/common/version.BuildUser=$(BUILDUSER)@$(BUILDHOST) \
+             -X github.com/prometheus/common/version.BuildDate=$(shell date +%Y-%m-%dT%T%z)
 
-format:
-	@echo ">> formatting code"
-	@go fmt $(pkgs)
+all: build test
 
-vet:
-	@echo ">> vetting code"
-	@go vet $(pkgs)
+build:
+	@echo ">> building"
+	@go build -ldflags "$(LDFLAGS)"
+
+crossbuild:
+	@echo ">> cross-building"
+	@gox -arch="$(CROSSBUILD_ARCH)" -os="$(CROSSBUILD_OS)" -ldflags="$(LDFLAGS)" -output="binaries/influx_stats_exporter_{{.OS}}_{{.Arch}}"
 
 test:
-	@echo ">> testing code"
-	@go test $(pkgs)
+	@echo ">> testing"
+	@go test -v -cover
 
-build: $(PROMU)
-	@echo ">> building binaries"
-	@$(PROMU) build
-
-tarball: build $(PROMU)
-	@echo ">> building release tarball"
-	@$(PROMU) tarball --prefix ./tarballs
+release: bin/github-release
+	@echo ">> uploading release ${VERSION}"
+	@for bin in binaries/*; do \
+		./bin/github-release upload -t ${VERSION} -n $$(basename $${bin}) -f $${bin}; \
+	done
 
 docker:
 	@echo ">> building docker image"
 	@docker build -t carlpett/influxdb_stats_exporter .
 
-promu: $(PROMU)
-$(PROMU):
-	@GOOS=$(shell uname -s | tr A-Z a-z) \
-	GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-	go get -u github.com/prometheus/promu
+$(GOPATH)/bin/gox:
+	# Need to disable modules for this to not pollute go.mod
+	@GO111MODULE=off go install github.com/mitchellh/gox
 
+bin/github-release:
+	@mkdir -p bin
+	@curl -sL 'https://github.com/aktau/github-release/releases/download/v0.6.2/linux-amd64-github-release.tar.bz2' | tar xjf - --strip-components 3 -C bin
 
-.PHONY: all style format build vet tarball $(PROMU)
+.PHONY: all build crossbuild test release
