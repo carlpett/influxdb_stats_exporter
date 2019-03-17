@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /build/influxdb_stats_exporter
     steps:
       - checkout
       - run: go mod tidy
@@ -11,7 +10,6 @@ jobs:
   release:
     docker:
       - image: circleci/golang:1.12
-    working_directory: /build/influxdb_stats_exporter
     steps:
       - checkout
       - run: go mod tidy
