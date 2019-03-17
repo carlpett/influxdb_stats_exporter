@@ -19,7 +19,7 @@ build:
 	@echo ">> building"
 	@go build -ldflags "$(LDFLAGS)"
 
-crossbuild:
+crossbuild: $(GOPATH)/bin/gox
 	@echo ">> cross-building"
 	@gox -arch="$(CROSSBUILD_ARCH)" -os="$(CROSSBUILD_OS)" -ldflags="$(LDFLAGS)" -output="binaries/influx_stats_exporter_{{.OS}}_{{.Arch}}"
 
@@ -39,7 +39,7 @@ docker:
 
 $(GOPATH)/bin/gox:
 	# Need to disable modules for this to not pollute go.mod
-	@GO111MODULE=off go install github.com/mitchellh/gox
+	@GO111MODULE=off go get -u github.com/mitchellh/gox
 
 bin/github-release:
 	@mkdir -p bin
