@@ -40,7 +40,7 @@ var (
 	influxUrl      = kingpin.Flag("influx.url", "Url to InfluxDB").Default("http://localhost:8086").Envar("INFLUX_URL").URL()
 	influxUser     = kingpin.Flag("influx.user", "InfluxDB username").Default("").Envar("INFLUX_USER").String()
 	influxPassword = kingpin.Flag("influx.password", "InfluxDB password").Default("").Envar("INFLUX_PASSWORD").String()
-	sslSkipVerify  = kingpin.Flag("ssl.skip-verify", "Skip HTTPS certificate verification").Default("false").String()
+	sslSkipVerify  = kingpin.Flag("ssl.skip-verify", "Skip HTTPS certificate verification").Bool()
 	bindAddr       = kingpin.Flag("web.listen-address", "Address to serve metrics on").Default(":9424").String()
 	metricsPath    = kingpin.Flag("web.metrics-path", "Path to serve metrics on").Default("/metrics").String()
 	logLevel       = kingpin.Flag("log.level", "Log level").Default(levelString(logrus.InfoLevel)).Enum(levelStrings(logrus.AllLevels)...)
@@ -118,9 +118,7 @@ func buildConfig() influx.HTTPConfig {
 	if *influxPassword != "" {
 		config.Password = *influxPassword
 	}
-	if strings.ToLower(*sslSkipVerify) == "true" {
-		config.InsecureSkipVerify = true
-	}
+	config.InsecureSkipVerify = *sslSkipVerify
 
 	return config
 }
