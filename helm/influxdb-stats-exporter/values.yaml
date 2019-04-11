@@ -68,6 +68,10 @@ log:
   # Log level (default: info")
   level: "info"
 
+ssl:
+  # Skip SSL Certificate Validation (default: false)
+  skipVerify: "false"
+
 web:
   # Port on which to expose metrics
   listenAddress: ":9424"

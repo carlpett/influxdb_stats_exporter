@@ -34,6 +34,7 @@ spec:
           args:
             - '--log.level={{ .Values.log.level }}'
             - '--influx.url={{ .Values.influx.url }}'
+            - '--ssl.skip-verify={{ .Values.ssl.skipVerify }}'
             - '--web.listen-address={{ .Values.web.listenAddress }}'
             - '--web.metrics-path={{ .Values.web.metricsPath }}'
           env:
