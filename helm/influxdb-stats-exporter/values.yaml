@@ -70,7 +70,7 @@ log:
 
 ssl:
   # Skip SSL Certificate Validation (default: false)
-  skipVerify: "false"
+  skipVerify: false
 
 web:
   # Port on which to expose metrics
