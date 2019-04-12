@@ -25,6 +25,7 @@ Name     | Description | Default value | Environment variable name
 `--influx.url` | Url to InfluxDB | `http://localhost:8086` | `INFLUX_URL`
 `--influx.user` | Username for InfluxDB | _(Not set)_ | `INFLUX_USER`
 `--influx.password` | Password for InfluxDB | _(Not set)_ | `INFLUX_PASSWORD`
+`--ssl.skip-verify` | Skip HTTPS certificate verification | `false` | -
 `--log.level` | Log level for console output | `info` | -
 `--web.listen-address` | Address on which to expose metrics | `:9424` | -
 `--web.metrics-path` | Path under which the metrics are available | `/metrics` | -
